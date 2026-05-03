@@ -30,8 +30,12 @@ constructor() {
 function createAccount(string memory _name) public {
     require(bytes(_name).length > 0, "Name cannot be empty");
     require(!userAccounts[msg.sender].isActive, "Account already exists");
-    userAccounts[msg.sender] = Account(_name, 0, msg.sender, true);
-    
+    userAccounts[msg.sender] = Account({
+        name: _name, 
+        balance: 0, 
+        accountAddress: msg.sender, 
+        isActive: true
+    });
 }
 
 //function to add money to the account
@@ -54,6 +58,30 @@ function withdrawMoney(uint256 _amount) public {
     totalAmountInBank -= _amount;
     (bool success, ) = payable(msg.sender).call{value: _amount}("");
     require(success, "Failed to transfer funds");
+
+}
+
+//function to transfer from user a to user b
+function transferMoney(address _to, uint256 _amount) public {
+    require(userAccounts[msg.sender].isActive, "Sender account does not exist");
+    require(userAccounts[_to].isActive, "Recipient account does not exist");
+    require(userAccounts[msg.sender].balance >= _amount, "Insufficient balance");
+    userAccounts[msg.sender].balance -= _amount;
+    userAccounts[_to].balance += _amount;
+
+}
+
+//function to close account
+function closeAccount() public {
+    require(userAccounts[msg.sender].isActive, "Account does not exist");
+    uint256 balance = userAccounts[msg.sender].balance;
+    if(balance > 0){
+        withdrawMoney(balance);
+    }
+    userAccounts[msg.sender].balance = 0;
+    userAccounts[msg.sender].isActive = false;
+    totalAmountInBank -= balance;
+    
 
 }
 
